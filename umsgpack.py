@@ -405,11 +405,17 @@ def _pack2(obj, fp, **options):
     global compatibility
 
     ext_handlers = options.get("ext_handlers")
+    # lookup mro except object for matching handler
+    ext_handler_match = next((
+            cls for cls in obj.__class__.__mro__[:-1]
+            if cls in ext_handlers
+    ), None) if ext_handlers else None
+
 
     if obj is None:
         _pack_nil(obj, fp, options)
-    elif ext_handlers and obj.__class__ in ext_handlers:
-        _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
+    elif ext_handler_match:
+        _pack_ext(ext_handlers[ext_handler_match](obj), fp, options)
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
     elif isinstance(obj, int) or isinstance(obj, long):
@@ -430,14 +436,9 @@ def _pack2(obj, fp, **options):
         _pack_map(obj, fp, options)
     elif isinstance(obj, Ext):
         _pack_ext(obj, fp, options)
-    elif ext_handlers:
-        # Linear search for superclass
-        t = next((t for t in ext_handlers.keys() if isinstance(obj, t)), None)
-        if t:
-            _pack_ext(ext_handlers[t](obj), fp, options)
-        else:
-            raise UnsupportedTypeException(
-                "unsupported type: %s" % str(type(obj)))
+    # default fallback
+    elif ext_handlers and object in ext_handlers:
+        _pack_ext(ext_handlers[object](obj), fp, options)
     else:
         raise UnsupportedTypeException("unsupported type: %s" % str(type(obj)))
 
@@ -475,11 +476,16 @@ def _pack3(obj, fp, **options):
     global compatibility
 
     ext_handlers = options.get("ext_handlers")
+    # lookup mro except object for matching handler
+    ext_handler_match = next((
+            cls for cls in obj.__class__.__mro__[:-1]
+            if cls in ext_handlers
+    ), None) if ext_handlers else None
 
     if obj is None:
         _pack_nil(obj, fp, options)
-    elif ext_handlers and obj.__class__ in ext_handlers:
-        _pack_ext(ext_handlers[obj.__class__](obj), fp, options)
+    elif ext_handler_match:
+        _pack_ext(ext_handlers[ext_handler_match](obj), fp, options)
     elif isinstance(obj, bool):
         _pack_boolean(obj, fp, options)
     elif isinstance(obj, int):
@@ -500,14 +506,9 @@ def _pack3(obj, fp, **options):
         _pack_map(obj, fp, options)
     elif isinstance(obj, Ext):
         _pack_ext(obj, fp, options)
-    elif ext_handlers:
-        # Linear search for superclass
-        t = next((t for t in ext_handlers.keys() if isinstance(obj, t)), None)
-        if t:
-            _pack_ext(ext_handlers[t](obj), fp, options)
-        else:
-            raise UnsupportedTypeException(
-                "unsupported type: %s" % str(type(obj)))
+    # default fallback
+    elif ext_handlers and object in ext_handlers:
+        _pack_ext(ext_handlers[object](obj), fp, options)
     else:
         raise UnsupportedTypeException(
             "unsupported type: %s" % str(type(obj)))
